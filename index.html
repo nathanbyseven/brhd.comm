@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coming Soon</title>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow-x: hidden;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #fff;
+    }
+
+    /* ─── VIDEO LAYER ─── */
+    #video-container {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #video-container iframe {
+      width: 100vw;
+      height: 56.25vw; /* 16:9 */
+      min-height: 100vh;
+      min-width: 177.78vh; /* 16:9 inverse */
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: none;
+      pointer-events: none;
+      /* Hide Cloudinary controls via CSS layering */
+    }
+
+    /* ─── GLITCH OVERLAY ─── */
+    #glitch-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      mix-blend-mode: screen;
+    }
+
+    #glitch-overlay.active {
+      animation: glitch-sequence 1.8s steps(1, end) forwards;
+    }
+
+    /* Scanline base */
+    #scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 11;
+      pointer-events: none;
+      opacity: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.15) 2px,
+        rgba(0,0,0,0.15) 4px
+      );
+      transition: opacity 200ms;
+    }
+
+    #scanlines.active {
+      opacity: 1;
+    }
+
+    /* RGB split layers */
+    #glitch-r, #glitch-g, #glitch-b {
+      position: fixed;
+      inset: 0;
+      z-index: 12;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    #glitch-r { background: rgba(255,0,0,0.25); }
+    #glitch-g { background: rgba(0,255,0,0.15); }
+    #glitch-b { background: rgba(0,0,255,0.25); }
+
+    /* Glitch slice bars */
+    #glitch-slices {
+      position: fixed;
+      inset: 0;
+      z-index: 13;
+      pointer-events: none;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    .glitch-slice {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      transform: translateX(0);
+    }
+
+    @keyframes glitch-sequence {
+      0%   { opacity: 0; }
+      5%   { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes slice-shift {
+      0%   { transform: translateX(0); }
+      20%  { transform: translateX(-8px); }
+      40%  { transform: translateX(12px); }
+      60%  { transform: translateX(-4px); }
+      80%  { transform: translateX(6px); }
+      100% { transform: translateX(0); }
+    }
+
+    @keyframes rgb-r {
+      0%   { opacity: 0; transform: translateX(0); }
+      10%  { opacity: 1; transform: translateX(-6px); }
+      30%  { opacity: 0.8; transform: translateX(4px); }
+      50%  { opacity: 1; transform: translateX(-8px); }
+      70%  { opacity: 0.5; transform: translateX(3px); }
+      90%  { opacity: 0.9; transform: translateX(-2px); }
+      100% { opacity: 0; transform: translateX(0); }
+    }
+
+    @keyframes rgb-b {
+      0%   { opacity: 0; transform: translateX(0); }
+      10%  { opacity: 1; transform: translateX(6px); }
+      30%  { opacity: 0.8; transform: translateX(-4px); }
+      50%  { opacity: 1; transform: translateX(8px); }
+      70%  { opacity: 0.5; transform: translateX(-3px); }
+      90%  { opacity: 0.9; transform: translateX(2px); }
+      100% { opacity: 0; transform: translateX(0); }
+    }
+
+    @keyframes rgb-g {
+      0%   { opacity: 0; }
+      15%  { opacity: 0.4; }
+      40%  { opacity: 0.2; }
+      70%  { opacity: 0.3; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes flash {
+      0%   { opacity: 0; }
+      10%  { opacity: 1; }
+      12%  { opacity: 0; }
+      30%  { opacity: 0.8; }
+      32%  { opacity: 0; }
+      60%  { opacity: 0.6; }
+      62%  { opacity: 0; }
+      80%  { opacity: 0.4; }
+      82%  { opacity: 0; }
+      100% { opacity: 0; }
+    }
+
+    /* ─── CONTENT LAYER ─── */
+    #content {
+      position: relative;
+      z-index: 20;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 0 24px 64px;
+    }
+
+    /* ─── EMAIL SECTION ─── */
+    .waitlist-panel {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      opacity: 0;
+      transform: translateY(16px);
+      animation: panel-enter 900ms 600ms var(--ease-out) forwards;
+    }
+
+    @keyframes panel-enter {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .waitlist-label {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      font-weight: 400;
+    }
+
+    .waitlist-title {
+      font-size: clamp(22px, 5vw, 30px);
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      text-align: center;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.2;
+    }
+
+    /* ─── FORM ─── */
+    .form-row {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      position: relative;
+    }
+
+    /* Double-bezel shell */
+    .input-shell {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 3px;
+    }
+
+    .input-core {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: none;
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 14px;
+      color: #fff;
+      font-family: inherit;
+      outline: none;
+      transition: background 200ms var(--ease-out);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.06);
+    }
+
+    .input-core::placeholder {
+      color: rgba(255,255,255,0.25);
+    }
+
+    .input-core:focus {
+      background: rgba(255,255,255,0.09);
+    }
+
+    /* Submit button */
+    .btn-submit {
+      flex-shrink: 0;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 0 22px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: transform 150ms var(--ease-out), background 150ms;
+      white-space: nowrap;
+    }
+
+    .btn-submit:hover {
+      background: rgba(255,255,255,0.88);
+    }
+
+    .btn-submit:active {
+      transform: scale(0.97);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Success / error states */
+    .form-message {
+      font-size: 13px;
+      text-align: center;
+      min-height: 18px;
+      transition: opacity 300ms;
+    }
+
+    .form-message.success {
+      color: rgba(255,255,255,0.55);
+    }
+
+    .form-message.error {
+      color: rgba(255,100,100,0.8);
+    }
+
+    /* ─── SUBTLE VIGNETTE ─── */
+    #vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      background: radial-gradient(
+        ellipse at center,
+        transparent 40%,
+        rgba(0,0,0,0.55) 100%
+      );
+    }
+
+    /* Bottom gradient to ensure form readability */
+    #bottom-gradient {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 55%;
+      z-index: 6;
+      pointer-events: none;
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(0,0,0,0.75) 100%
+      );
+    }
+
+    /* ─── REDUCED MOTION ─── */
+    @media (prefers-reduced-motion: reduce) {
+      .waitlist-panel {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+      #glitch-r, #glitch-b, #glitch-g, #glitch-slices, #scanlines {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- VIDEO -->
+  <div id="video-container">
+    <iframe
+      id="cloud-player"
+      src="https://player.cloudinary.com/embed/?cloud_name=dhhk8hhjb&public_id=brhd_loop_rjbwg0&autoplay=true&loop=false&muted=true&controls=false&showJumpControls=false&showLogo=false&fluid=true&colors=%7B%22accent%22%3A%22%23000000%22%7D"
+      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+      allowfullscreen
+      frameborder="0"
+    ></iframe>
+  </div>
+
+  <!-- VIGNETTE -->
+  <div id="vignette"></div>
+  <div id="bottom-gradient"></div>
+
+  <!-- GLITCH LAYERS -->
+  <div id="glitch-overlay"></div>
+  <div id="scanlines"></div>
+  <div id="glitch-r"></div>
+  <div id="glitch-g"></div>
+  <div id="glitch-b"></div>
+  <div id="glitch-slices" id="glitch-slices"></div>
+
+  <!-- CONTENT -->
+  <div id="content">
+    <div class="waitlist-panel">
+      <span class="waitlist-label">Coming Soon</span>
+      <h1 class="waitlist-title">Join the waitlist</h1>
+
+      <form id="waitlist-form" class="form-row" action="https://formspree.io/f/xyklnepr" method="POST">
+        <div class="input-shell">
+          <input
+            class="input-core"
+            type="email"
+            name="email"
+            placeholder="your@email.com"
+            required
+            autocomplete="email"
+          />
+        </div>
+        <button class="btn-submit" type="submit" id="submit-btn">Notify me</button>
+      </form>
+
+      <p class="form-message" id="form-msg"></p>
+    </div>
+  </div>
+
+  <script>
+    // ─── GLITCH ENGINE ───────────────────────────────────────────────────
+    const glitchSlicesContainer = document.getElementById('glitch-slices');
+    const scanlines = document.getElementById('scanlines');
+    const glitchR = document.getElementById('glitch-r');
+    const glitchG = document.getElementById('glitch-g');
+    const glitchB = document.getElementById('glitch-b');
+
+    function buildSlices() {
+      glitchSlicesContainer.innerHTML = '';
+      const count = 14;
+      for (let i = 0; i < count; i++) {
+        const slice = document.createElement('div');
+        slice.className = 'glitch-slice';
+        const topPct = (i / count) * 100;
+        const heightPct = (100 / count) * (0.3 + Math.random() * 1.4);
+        slice.style.top = topPct + '%';
+        slice.style.height = heightPct + '%';
+        slice.style.opacity = Math.random() * 0.08;
+        glitchSlicesContainer.appendChild(slice);
+      }
+    }
+
+    function triggerGlitch(durationMs = 1800) {
+      buildSlices();
+
+      // Scanlines
+      scanlines.classList.add('active');
+
+      // RGB split
+      glitchR.style.animation = `rgb-r ${durationMs}ms steps(3, end) forwards`;
+      glitchB.style.animation = `rgb-b ${durationMs}ms steps(3, end) forwards`;
+      glitchG.style.animation = `rgb-g ${durationMs}ms steps(2, end) forwards`;
+
+      // Slice jitter — each slice animates differently
+      glitchSlicesContainer.style.opacity = '1';
+      const slices = glitchSlicesContainer.querySelectorAll('.glitch-slice');
+      slices.forEach(slice => {
+        const dur = 80 + Math.random() * 200;
+        const delay = Math.random() * durationMs * 0.6;
+        const dist = (Math.random() - 0.5) * 30;
+        slice.animate([
+          { transform: 'translateX(0)', opacity: slice.style.opacity },
+          { transform: `translateX(${dist}px)`, opacity: Math.random() * 0.12 },
+          { transform: `translateX(${-dist * 0.6}px)`, opacity: Math.random() * 0.06 },
+          { transform: 'translateX(0)', opacity: 0 },
+        ], {
+          duration: dur,
+          delay: delay,
+          easing: 'steps(4, end)',
+          fill: 'forwards',
+        });
+      });
+
+      // Frame flicker — rapid opacity flash on whole video
+      const iframe = document.getElementById('cloud-player');
+      const flickerKeyframes = [];
+      let t = 0;
+      while (t < 1) {
+        flickerKeyframes.push({ offset: t, opacity: Math.random() > 0.15 ? 1 : 0.5 });
+        t += 0.04 + Math.random() * 0.08;
+      }
+      flickerKeyframes.push({ offset: 1, opacity: 1 });
+      iframe.animate(flickerKeyframes, {
+        duration: durationMs,
+        easing: 'steps(1, end)',
+        fill: 'forwards',
+      });
+
+      // Cleanup
+      setTimeout(() => {
+        scanlines.classList.remove('active');
+        glitchR.style.animation = '';
+        glitchB.style.animation = '';
+        glitchG.style.animation = '';
+        glitchSlicesContainer.style.opacity = '0';
+        iframe.style.opacity = '1';
+      }, durationMs + 50);
+    }
+
+    // ─── VIDEO LOOP CONTROLLER ───────────────────────────────────────────
+    // Cloudinary player doesn't expose timeupdate via postMessage natively,
+    // so we poll a proxy timer that mirrors the expected video duration.
+    // The video will also handle its own looping via Cloudinary's loop param,
+    // but we control the glitch trigger with our own timer.
+
+    // Approximate video duration — adjust if you know the exact length.
+    // We'll use a conservative fallback of 10s and also listen for messages.
+    let videoDuration = null; // will be detected if possible
+    let glitchTriggered = false;
+    let loopTimer = null;
+
+    // Attempt to detect duration from Cloudinary player messages
+    window.addEventListener('message', function(e) {
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (data && data.event === 'ready') {
+          // Player is ready
+        }
+        if (data && data.event === 'durationchange' && data.duration) {
+          videoDuration = data.duration;
+          scheduleGlitch(videoDuration);
+        }
+        if (data && data.event === 'timeupdate' && data.currentTime) {
+          if (videoDuration && !glitchTriggered) {
+            const remaining = videoDuration - data.currentTime;
+            if (remaining <= 1.8 && remaining > 0) {
+              glitchTriggered = true;
+              triggerGlitch(Math.min(remaining * 1000 + 400, 1800));
+              setTimeout(() => { glitchTriggered = false; }, (videoDuration * 1000) + 100);
+            }
+          }
+        }
+      } catch (err) {}
+    });
+
+    function scheduleGlitch(dur) {
+      if (loopTimer) clearInterval(loopTimer);
+      // Trigger glitch 1.8s before end, then repeat each loop
+      const glitchOffset = Math.max(dur - 1.8, 0.5);
+      loopTimer = setInterval(() => {
+        glitchTriggered = true;
+        triggerGlitch(1800);
+        setTimeout(() => { glitchTriggered = false; }, 2500);
+      }, dur * 1000);
+      // First trigger
+      setTimeout(() => {
+        glitchTriggered = true;
+        triggerGlitch(1800);
+        setTimeout(() => { glitchTriggered = false; }, 2500);
+      }, glitchOffset * 1000);
+    }
+
+    // ─── FALLBACK: If duration isn't detected in 3s, use 10s default ────
+    setTimeout(() => {
+      if (!videoDuration) {
+        videoDuration = 10;
+        scheduleGlitch(videoDuration);
+      }
+    }, 3000);
+
+    // ─── FORMSPREE AJAX SUBMIT ───────────────────────────────────────────
+    const form = document.getElementById('waitlist-form');
+    const msgEl = document.getElementById('form-msg');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = '...';
+      msgEl.className = 'form-message';
+      msgEl.textContent = '';
+
+      const data = new FormData(form);
+
+      try {
+        const res = await fetch('https://formspree.io/f/xyklnepr', {
+          method: 'POST',
+          body: data,
+          headers: { 'Accept': 'application/json' },
+        });
+
+        if (res.ok) {
+          msgEl.textContent = 'You\'re on the list. We\'ll be in touch.';
+          msgEl.className = 'form-message success';
+          form.reset();
+          submitBtn.textContent = 'Done';
+        } else {
+          const json = await res.json();
+          const errMsg = json.errors
+            ? json.errors.map(e => e.message).join(', ')
+            : 'Something went wrong. Try again.';
+          msgEl.textContent = errMsg;
+          msgEl.className = 'form-message error';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Notify me';
+        }
+      } catch (err) {
+        msgEl.textContent = 'Connection error. Try again.';
+        msgEl.className = 'form-message error';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Notify me';
+      }
+    });
+  </script>
+</body>
+</html>
