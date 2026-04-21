@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coming Soon</title>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow-x: hidden;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #fff;
+    }
+
+    /* ─── VIDEO LAYER ─── */
+    #video-container {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #video-container iframe {
+      width: 100vw;
+      height: 56.25vw; /* 16:9 */
+      min-height: 100vh;
+      min-width: 177.78vh; /* 16:9 inverse */
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: none;
+      pointer-events: none;
+      /* Hide Cloudinary controls via CSS layering */
+    }
+
+    /* ─── CONTENT LAYER ─── */
+    #content {
+      position: relative;
+      z-index: 20;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 0 20px 32px;
+    }
+
+    /* ─── EMAIL SECTION ─── */
+    .waitlist-panel {
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: panel-enter 900ms 600ms var(--ease-out) forwards;
+    }
+
+    @keyframes panel-enter {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .waitlist-label {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      font-weight: 400;
+      margin-bottom: 2px;
+    }
+
+    /* ─── FORM ─── */
+    .form-row {
+      width: 100%;
+      display: flex;
+      gap: 6px;
+      position: relative;
+    }
+
+    /* Double-bezel shell */
+    .input-shell {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 2px;
+    }
+
+    .input-core {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: none;
+      border-radius: 6px;
+      padding: 9px 13px;
+      font-size: 12px;
+      color: #fff;
+      font-family: inherit;
+      outline: none;
+      transition: background 200ms var(--ease-out);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
+    }
+
+    .input-core::placeholder {
+      color: rgba(255,255,255,0.22);
+    }
+
+    .input-core:focus {
+      background: rgba(255,255,255,0.08);
+    }
+
+    /* Submit button */
+    .btn-submit {
+      flex-shrink: 0;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 0 16px;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: inherit;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: transform 150ms var(--ease-out), background 150ms;
+      white-space: nowrap;
+    }
+
+    .btn-submit:hover {
+      background: rgba(255,255,255,0.88);
+    }
+
+    .btn-submit:active {
+      transform: scale(0.97);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Success / error states */
+    .form-message {
+      font-size: 11px;
+      text-align: center;
+      min-height: 16px;
+      transition: opacity 300ms;
+    }
+
+    .form-message.success {
+      color: rgba(255,255,255,0.4);
+    }
+
+    .form-message.error {
+      color: rgba(255,100,100,0.7);
+    }
+
+    /* ─── SUBTLE VIGNETTE ─── */
+    #vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      background: radial-gradient(
+        ellipse at center,
+        transparent 40%,
+        rgba(0,0,0,0.55) 100%
+      );
+    }
+
+    /* Bottom gradient to ensure form readability */
+    #bottom-gradient {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 28%;
+      z-index: 6;
+      pointer-events: none;
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(0,0,0,0.6) 100%
+      );
+    }
+
+    /* ─── REDUCED MOTION ─── */
+    @media (prefers-reduced-motion: reduce) {
+      .waitlist-panel {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- VIDEO -->
+  <div id="video-container">
+    <iframe
+      id="cloud-player"
+      src="https://player.cloudinary.com/embed/?cloud_name=dhhk8hhjb&public_id=brhd_loop_rjbwg0&autoplay=true&loop=false&muted=true&controls=false&showJumpControls=false&showLogo=false&fluid=true&colors=%7B%22accent%22%3A%22%23000000%22%7D"
+      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+      allowfullscreen
+      frameborder="0"
+    ></iframe>
+  </div>
+
+  <!-- VIGNETTE -->
+  <div id="vignette"></div>
+  <div id="bottom-gradient"></div>
+
+  <!-- CONTENT -->
+  <div id="content">
+    <div class="waitlist-panel">
+      <span class="waitlist-label">Coming Soon</span>
+
+      <form id="waitlist-form" class="form-row" action="https://formspree.io/f/xyklnepr" method="POST">
+        <div class="input-shell">
+          <input
+            class="input-core"
+            type="email"
+            name="email"
+            placeholder="your@email.com"
+            required
+            autocomplete="email"
+          />
+        </div>
+        <button class="btn-submit" type="submit" id="submit-btn">Notify me</button>
+      </form>
+
+      <p class="form-message" id="form-msg"></p>
+    </div>
+  </div>
+
+  <script>
+    // ─── FORMSPREE AJAX SUBMIT ───────────────────────────────────────────
+    const form = document.getElementById('waitlist-form');
+    const msgEl = document.getElementById('form-msg');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = '...';
+      msgEl.className = 'form-message';
+      msgEl.textContent = '';
+
+      const data = new FormData(form);
+
+      try {
+        const res = await fetch('https://formspree.io/f/xyklnepr', {
+          method: 'POST',
+          body: data,
+          headers: { 'Accept': 'application/json' },
+        });
+
+        if (res.ok) {
+          msgEl.textContent = 'You\'re on the list. We\'ll be in touch.';
+          msgEl.className = 'form-message success';
+          form.reset();
+          submitBtn.textContent = 'Done';
+        } else {
+          const json = await res.json();
+          const errMsg = json.errors
+            ? json.errors.map(e => e.message).join(', ')
+            : 'Something went wrong. Try again.';
+          msgEl.textContent = errMsg;
+          msgEl.className = 'form-message error';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Notify me';
+        }
+      } catch (err) {
+        msgEl.textContent = 'Connection error. Try again.';
+        msgEl.className = 'form-message error';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Notify me';
+      }
+    });
+  </script>
+</body>
+</html>
